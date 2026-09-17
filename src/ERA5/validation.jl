@@ -23,7 +23,6 @@ function validate_raw(ds, filename)
     for dim in ("longitude", "latitude", "model_level", "valid_time")
         haskey(ds.dim, dim) || error("Missing dimension $dim in $filename")
     end
-    check_present(ds, ["w"], filename)
     check_no_nan(ds, ["u", "v", "t", "q", "skt", "sp", "surface_geopotential"], filename)
     check_model_levels(ds, filename)
     return nothing

@@ -7,16 +7,24 @@ const N_MODEL_LEVELS = 137
 """
 MARS parameter IDs for the model-level atmosphere state, as
 (parameter id => NetCDF short name). From `MODEL_LEVEL_PARAM_IDS_FULL` in
-WeatherQuest `era5_variables.py`. Rain and snow water content, `75` and `76`,
-are archived on model levels too, but WeatherQuest does not request them.
+WeatherQuest `era5_variables.py`, less the vertical velocity. Rain and snow
+water content, `75` and `76`, are archived on model levels too, but
+WeatherQuest does not request them either.
 See https://www.ecmwf.int/en/forecasts/datasets/set-i.
+
+Vertical velocity, `135`, is left out on purpose. ERA5 archives it as the
+pressure velocity in Pa/s, and it comes from a hydrostatic model, so it is
+not the vertical velocity a nonhydrostatic model wants. Both consumers throw
+it away: WeatherQuest `to_z_levels_3d_model` and ClimaAtmos `to_z_levels_1d`
+write `w = 0` unless their `interp_w` keyword is set, which nothing sets. Were
+it in the file, `interp_w = true` would carry Pa/s into a field ClimaAtmos
+reads as m/s, with the opposite sign convention.
 """
 const MODEL_LEVEL_PARAMS = [
     "130" => "t",
     "131" => "u",
     "132" => "v",
     "133" => "q",
-    "135" => "w",
     "246" => "clwc",
     "247" => "ciwc",
 ]

@@ -121,7 +121,7 @@ today.
 
 | File                                     | Holds                                                                                                          | Read by                                   |
 |:---------------------------------------- |:-------------------------------------------------------------------------------------------------------------- |:----------------------------------------- |
-| `era5_raw_YYYYMMDD_HHMM.nc`              | `u`, `v`, `w`, `t`, `q`, `clwc`, `ciwc` on the 137 ERA5 model levels, plus `skt`, `sp`, `surface_geopotential` | WeatherQuest `to_z_levels_3d_model`       |
+| `era5_raw_YYYYMMDD_HHMM.nc`              | `u`, `v`, `t`, `q`, `clwc`, `ciwc` on the 137 ERA5 model levels, plus `skt`, `sp`, `surface_geopotential`      | WeatherQuest `to_z_levels_3d_model`       |
 | `sst_processed_YYYYMMDD_HHMM.nc`         | `SST` in Celsius, land filled by nearest neighbor                                                              | prescribed ocean                          |
 | `sic_processed_YYYYMMDD_HHMM.nc`         | `SEAICE` in percent, and `ISTL1` in Kelvin                                                                     | prescribed sea ice                        |
 | `era5_land_processed_YYYYMMDD_HHMM.nc`   | `skt`, `tsn`, `swe`, `swvl`, `stl`, with 0 over ocean                                                          | ClimaLand integrated land                 |
@@ -175,6 +175,19 @@ rather than its own copies. The remaining differences are deliberate:
     `surface_geopotential` and `sp`, which is what `to_z_levels_3d_model`
     reads, so the second request is dropped. Neither `crwc` nor `cswc` is
     requested, matching `MODEL_LEVEL_PARAM_IDS_FULL`.
+
+  - Vertical velocity, MARS parameter `135`, is not requested, so `w` is not in
+    the raw file. ERA5 archives it as the pressure velocity in Pa/s from a
+    hydrostatic model, which is not the vertical velocity a nonhydrostatic
+    model wants, and both consumers discard it: WeatherQuest
+    `to_z_levels_3d_model` and ClimaAtmos `to_z_levels_1d` write `w = 0` unless
+    their `interp_w` keyword is set, and nothing sets it. The
+    `wxquest_initial_conditions` raw files carry no `w` either, so leaving it
+    out keeps the two in step. It is worth leaving out rather than merely
+    unused: `to_z_levels_3d_model` copies the source attributes onto the `w` it
+    writes, so `interp_w = true` over a file that does have `w` would put
+    Pa/s into a field ClimaAtmos reads as m/s, with the opposite sign
+    convention. A port of `to_z_levels_3d_model` should zero `w` the same way.
 
   - The files hold only the variables a consumer reads. Dropped, with the
     consumer checked in each case: `si` and `sie` from the land file, which
