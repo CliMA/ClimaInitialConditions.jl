@@ -47,9 +47,12 @@ end
 function validate_land(ds, filename)
     check_no_nan(ds, ["skt", "tsn", "swe", "swvl", "stl"], filename)
     stl = Array(ds["stl"])
+    # A single-levels download defines `stl` everywhere, so every point should
+    # be a real temperature. 0 is allowed because a source that masks the
+    # field, such as ERA5-Land, leaves 0 behind after `zero_fill`.
     all(x -> x == 0 || x > 100, stl) || error(
-        "stl in $filename has values that are neither 0 (ocean) nor a " *
-        "plausible temperature in Kelvin",
+        "stl in $filename has values that are neither 0 (masked in the " *
+        "source) nor a plausible temperature in Kelvin",
     )
     return nothing
 end

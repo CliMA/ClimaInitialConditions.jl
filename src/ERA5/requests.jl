@@ -12,13 +12,20 @@ water content, `75` and `76`, are archived on model levels too, but
 WeatherQuest does not request them either.
 See https://www.ecmwf.int/en/forecasts/datasets/set-i.
 
-Vertical velocity, `135`, is left out on purpose. ERA5 archives it as the
-pressure velocity in Pa/s, and it comes from a hydrostatic model, so it is
-not the vertical velocity a nonhydrostatic model wants. Both consumers throw
-it away: WeatherQuest `to_z_levels_3d_model` and ClimaAtmos `to_z_levels_1d`
-write `w = 0` unless their `interp_w` keyword is set, which nothing sets. Were
-it in the file, `interp_w = true` would carry Pa/s into a field ClimaAtmos
-reads as m/s, with the opposite sign convention.
+Vertical velocity, `135`, is left out on purpose, and doing so decides what
+the atmosphere is initialized with, so it is worth knowing why. ERA5 archives
+it as the pressure velocity in Pa/s from a hydrostatic model, which is not the
+vertical velocity a nonhydrostatic model wants. Every initial condition in
+`wxquest_initial_conditions` carries `w = 0`, because the raw files that built
+them hold no `w` either.
+
+WeatherQuest has since grown a conversion: `to_z_levels_3d_model` turns omega
+into a geometric velocity, `w = -omega * R_d * T / (p * g)` tapered to 0
+between 100 and 10 hPa, and `processing/preprocessing.jl` now calls it with
+`interp_w = true`. That path needs `w` in its source file. Without it, the
+`!haskey(ncin, "w")` arm of the same branch writes zeros and does not warn, so
+a file from here yields `w = 0` whether or not the caller asked to interpolate
+it. Add `"135" => "w"` back to pick the conversion up.
 """
 const MODEL_LEVEL_PARAMS = [
     "130" => "t",
