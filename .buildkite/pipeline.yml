@@ -8,8 +8,6 @@ env:
   SLURM_KILL_BAD_EXIT: 1
   # Download once per build and reuse across steps, the way a cluster run does
   INITIAL_CONDITIONS_CACHE_DIR: "${BUILDKITE_BUILD_PATH}/${BUILDKITE_PIPELINE_SLUG}/era5_cache"
-  # The date the wxquest_initial_conditions artifact is compared against
-  IC_TEST_DATE: "2010-01-01"
 
 steps:
   - label: "init :computer:"
@@ -24,11 +22,6 @@ steps:
 
   - wait
 
-  - label: "Unit tests"
-    key: "unit_tests"
-    command:
-      - "julia --color=yes --project=. -e 'using Pkg; Pkg.test()'"
-
   # The CDS download is the part GitHub Actions cannot cover: it needs
   # credentials and can queue for hours. CDS being down is not a code failure,
   # so this step is allowed to fail without reddening the build.
@@ -42,8 +35,7 @@ steps:
       - "julia --color=yes --project=. test/network_tests.jl"
 
   # Regression guard: the files this package writes must keep matching the
-  # artifact that WeatherQuest produced, apart from the documented
-  # differences. Needs /groups/esm, so it cannot run on GitHub Actions.
+  # artifact that WeatherQuest produced, apart from documented differences.
   - label: "Compare against wxquest_initial_conditions"
     key: "artifact_comparison"
     depends_on: "network_tests"

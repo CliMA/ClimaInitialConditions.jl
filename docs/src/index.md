@@ -119,14 +119,14 @@ archived hourly, so the start time has to land on the hour; `00:00` is the
 usual one and the only one the ClimaCoupler and ClimaAtmos path lookups accept
 today.
 
-| File                                     | Holds                                                                                                          | Read by                                   |
-|:---------------------------------------- |:-------------------------------------------------------------------------------------------------------------- |:----------------------------------------- |
-| `era5_raw_YYYYMMDD_HHMM.nc`              | `u`, `v`, `t`, `q`, `clwc`, `ciwc` on the 137 ERA5 model levels, plus `skt`, `sp`, `surface_geopotential`      | WeatherQuest `to_z_levels_3d_model`       |
-| `sst_processed_YYYYMMDD_HHMM.nc`         | `SST` in Celsius, land filled by nearest neighbor                                                              | prescribed ocean                          |
-| `sic_processed_YYYYMMDD_HHMM.nc`         | `SEAICE` in percent, and `ISTL1` in Kelvin                                                                     | prescribed sea ice                        |
-| `era5_land_processed_YYYYMMDD_HHMM.nc`   | `skt`, `tsn`, `swe`, `swvl`, `stl`                                                                             | ClimaLand integrated land                 |
-| `era5_bucket_processed_YYYYMMDD_HHMM.nc` | `W`, `Ws`, `S`, `T`, `tsn`, `skt`                                                                              | bucket land                               |
-| `albedo_processed_YYYYMMDD_HHMM.nc`      | `sw_alb_clr`, the ERA5 forecast albedo                                                                         | bucket, when `bucket_albedo_type: "era5"` |
+| File                                     | Holds                                                                                                     | Read by                                   |
+|:---------------------------------------- |:--------------------------------------------------------------------------------------------------------- |:----------------------------------------- |
+| `era5_raw_YYYYMMDD_HHMM.nc`              | `u`, `v`, `t`, `q`, `clwc`, `ciwc` on the 137 ERA5 model levels, plus `skt`, `sp`, `surface_geopotential` | WeatherQuest `to_z_levels_3d_model`       |
+| `sst_processed_YYYYMMDD_HHMM.nc`         | `SST` in Celsius, land filled by nearest neighbor                                                         | prescribed ocean                          |
+| `sic_processed_YYYYMMDD_HHMM.nc`         | `SEAICE` in percent, and `ISTL1` in Kelvin                                                                | prescribed sea ice                        |
+| `era5_land_processed_YYYYMMDD_HHMM.nc`   | `skt`, `tsn`, `swe`, `swvl`, `stl`                                                                        | ClimaLand integrated land                 |
+| `era5_bucket_processed_YYYYMMDD_HHMM.nc` | `W`, `Ws`, `S`, `T`, `tsn`, `skt`                                                                         | bucket land                               |
+| `albedo_processed_YYYYMMDD_HHMM.nc`      | `sw_alb_clr`, the ERA5 forecast albedo                                                                    | bucket, when `bucket_albedo_type: "era5"` |
 
 The atmosphere state comes from `reanalysis-era5-complete`, the MARS archive,
 on the 137 native model levels. Levels keep the order MARS delivers them, level

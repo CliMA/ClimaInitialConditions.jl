@@ -435,6 +435,7 @@ end
             TEST_DATE;
             dir,
             retrieve_fn = throwing_retrieve,
+            attempts = 1,
         )
         @test !ERA5.files_complete(dir, TEST_DATE)
         for name in ERA5.output_filenames(TEST_DATE)
