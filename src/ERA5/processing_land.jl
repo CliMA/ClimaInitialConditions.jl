@@ -59,12 +59,13 @@ function process_land(source_path, output_path)
                     ncout,
                     name,
                     Float32,
-                    ("lon", "lat", "z"),
+                    ("lon", "lat", "z");
                     attrib = Dict(
                         "units" => units,
                         "longname" => long_name,
                         "varname" => name,
                     ),
+                    COMPRESSION...,
                 )
                 var[:, :, :] = soil_layers_to_z(field)
             end
@@ -78,12 +79,13 @@ function process_land(source_path, output_path)
                     ncout,
                     name,
                     Float32,
-                    ("lon", "lat"),
+                    ("lon", "lat");
                     attrib = Dict(
                         "units" => units,
                         "longname" => long_name,
                         "varname" => name,
                     ),
+                    COMPRESSION...,
                 )
                 var[:, :] = field
             end
@@ -157,12 +159,13 @@ function process_bucket(source_path, output_path; subsurface_water_z_max = 0.5)
                 ncout,
                 "T",
                 Float32,
-                ("lon", "lat", "z"),
+                ("lon", "lat", "z");
                 attrib = Dict(
                     "units" => "K",
                     "longname" => "Soil temperature profile",
                     "varname" => "T",
                 ),
+                COMPRESSION...,
             )
             T_var[:, :, :] = soil_layers_to_z(T)
 
@@ -177,12 +180,13 @@ function process_bucket(source_path, output_path; subsurface_water_z_max = 0.5)
                     ncout,
                     name,
                     Float32,
-                    ("lon", "lat"),
+                    ("lon", "lat");
                     attrib = Dict(
                         "units" => units,
                         "longname" => long_name,
                         "varname" => name,
                     ),
+                    COMPRESSION...,
                 )
                 var[:, :] = field
             end
