@@ -19,10 +19,14 @@ elseif !ERA5.credentials_available()
         "The ERA5 network tests need CDS credentials in ~/.cdsapirc or in CDSAPI_URL and CDSAPI_KEY",
     )
 else
-    DATE = Dates.DateTime(2023, 6, 1)
+    # Shared with artifact_comparison.jl so one build downloads one date
+    DATE = Dates.DateTime(get(ENV, "IC_TEST_DATE", "2010-01-01"))
 
     @testset "ERA5 CDS download end to end" begin
-        mktempdir() do dir
+        # The cache, not a temporary, so the comparison step reuses this
+        # download instead of queueing a second one
+        mkpath(ERA5.cache_dir())
+        let dir = ERA5.cache_dir()
             fetched_dir = ERA5.fetch_initial_conditions(DATE; dir, wait = 30.0)
             @test fetched_dir == dir
             @test ERA5.files_complete(dir, DATE)
@@ -60,21 +64,20 @@ else
             NCDatasets.NCDataset(joinpath(dir, ERA5.land_filename(DATE))) do ds
                 @test issorted(Array(ds["lat"]))
                 @test issorted(Array(ds["z"]))
-                # Ocean points are 0, which is how the ClimaLand reader masks
-                @test minimum(Array(ds["stl"])) == 0
+                # ERA5 single levels define the soil fields over ocean too, so
+                # every point is a real temperature rather than a masked 0
+                @test minimum(Array(ds["stl"])) > 100
+                @test maximum(Array(ds["stl"])) < 400
             end
         end
     end
 
     @testset "default cache directory is used when dir is not given" begin
-        mktempdir() do cache_dir
-            withenv("INITIAL_CONDITIONS_CACHE_DIR" => cache_dir) do
-                @test ERA5.cache_dir() == cache_dir
-                dir = ERA5.fetch_initial_conditions(DATE)
-                @test dir == cache_dir
-                @test ERA5.files_complete(dir, DATE)
-                ERA5.validate_dir(dir, DATE)
-            end
-        end
+        # The testset above filled this cache, so this is a hit rather than a
+        # second download of the same date
+        dir = ERA5.fetch_initial_conditions(DATE)
+        @test dir == ERA5.cache_dir()
+        @test ERA5.files_complete(dir, DATE)
+        ERA5.validate_dir(dir, DATE)
     end
 end

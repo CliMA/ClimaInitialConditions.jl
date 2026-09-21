@@ -94,7 +94,8 @@ end
 
 """
 Write a fake CDS single-levels download. The ocean fields `sst`, `siconc`,
-and `istl1` are missing over land. The soil fields are missing over ocean.
+and `istl1` are missing over land. The soil fields are masked over ocean so
+that `zero_fill` is exercised, which ERA5 single levels does not do.
 With `expver = true` it carries the extra `expver` dimension.
 """
 function write_fake_surface_file(path; expver = false)
@@ -349,7 +350,8 @@ end
             @test haskey(ds, "ISTL1")
         end
 
-        # Land: sorted latitude, zeros over ocean, sorted negative z
+        # Land: sorted latitude, sorted negative z, zero_fill over the
+        # fixture's masked points
         NCDatasets.NCDataset(joinpath(dir, ERA5.land_filename(TEST_DATE))) do ds
             @test issorted(Array(ds["lat"]))
             z = Array(ds["z"])
@@ -358,7 +360,8 @@ end
             swvl = Array(ds["swvl"])
             stl = Array(ds["stl"])
             @test size(swvl) == (NLON, NLAT, 4)
-            # Ocean points are exactly 0
+            # This fixture masks the soil fields over ocean, unlike ERA5
+            # single levels, so zero_fill leaves exactly 0 there
             @test all(swvl[4:end, :, :] .== 0)
             @test all(stl[4:end, :, :] .== 0)
             # Layer 1 is the last z index after the reversal

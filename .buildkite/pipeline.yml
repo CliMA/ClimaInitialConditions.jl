@@ -8,6 +8,8 @@ env:
   SLURM_KILL_BAD_EXIT: 1
   # Download once per build and reuse across steps, the way a cluster run does
   INITIAL_CONDITIONS_CACHE_DIR: "${BUILDKITE_BUILD_PATH}/${BUILDKITE_PIPELINE_SLUG}/era5_cache"
+  # Both steps use this date, so a build makes one set of CDS requests
+  IC_TEST_DATE: "2010-01-01"
 
 steps:
   - label: "init :computer:"
@@ -27,8 +29,6 @@ steps:
   # so this step is allowed to fail without reddening the build.
   - label: "ERA5 download end to end"
     key: "network_tests"
-    timeout_in_minutes: 300
-    soft_fail: true
     env:
       ERA5_NETWORK_TESTS: "true"
     command:
@@ -39,7 +39,5 @@ steps:
   - label: "Compare against wxquest_initial_conditions"
     key: "artifact_comparison"
     depends_on: "network_tests"
-    timeout_in_minutes: 300
-    soft_fail: true
     command:
       - "julia --color=yes --project=. test/artifact_comparison.jl"
