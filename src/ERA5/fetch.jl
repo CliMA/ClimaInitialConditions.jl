@@ -13,7 +13,7 @@ Whether the cache at `dir` holds all the output files for `date`, built by the
 current request. Files only move into the cache after validation, so their
 presence means the set is complete.
 
-A cache written before [`REQUEST_VERSION`](@ref) was last bumped counts as
+A cache written before `REQUEST_VERSION` was last bumped counts as
 incomplete, so adding a variable does not leave shared caches serving files
 that lack it.
 """
