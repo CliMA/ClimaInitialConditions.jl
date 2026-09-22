@@ -83,7 +83,6 @@ function write_fake_model_file(path; expver = false, levels = TEST_MODEL_LEVELS)
             ("q", 0.005),
             ("u", 10.0),
             ("v", -5.0),
-            ("w", 0.1),
             ("clwc", 1.0e-5),
             ("ciwc", 1.0e-6),
         )
@@ -95,7 +94,8 @@ end
 
 """
 Write a fake CDS single-levels download. The ocean fields `sst`, `siconc`,
-and `istl1` are missing over land. The soil fields are missing over ocean.
+and `istl1` are missing over land. The soil fields are masked over ocean so
+that `zero_fill` is exercised, which ERA5 single levels does not do.
 With `expver = true` it carries the extra `expver` dimension.
 """
 function write_fake_surface_file(path; expver = false)
@@ -249,8 +249,9 @@ end
     @test request["levtype"] == "ml"
     @test request["levelist"] == "1/to/137"
     @test request["data_format"] == "netcdf"
-    # t, u, v, q, w, clwc, ciwc
-    @test request["param"] == "130/131/132/133/135/246/247"
+    # t, u, v, q, clwc, ciwc; no 135, the vertical velocity
+    @test request["param"] == "130/131/132/133/246/247"
+    @test !occursin("135", request["param"])
 
     surface = ERA5.single_levels_request(TEST_DATE)
     @test "sea_surface_temperature" in surface["variable"]
@@ -274,6 +275,37 @@ end
             NCDatasets.defDim(ds, "x", 1)
         end
         @test ERA5.assert_netcdf_download(nc_path) == nc_path
+    end
+end
+
+@testset "a cache from an older request is refetched" begin
+    mktempdir() do dir
+        recorded = []
+        ERA5.fetch_initial_conditions(
+            TEST_DATE;
+            dir,
+            retrieve_fn = make_fake_retrieve(recorded),
+        )
+        @test length(recorded) == 2
+        @test ERA5.files_complete(dir, TEST_DATE)
+
+        version_path = joinpath(dir, ERA5.version_filename(TEST_DATE))
+        @test parse(Int, strip(read(version_path, String))) == ERA5.REQUEST_VERSION
+
+        # A cache built by an older request is incomplete, so it downloads again
+        write(version_path, string(ERA5.REQUEST_VERSION - 1))
+        @test !ERA5.files_complete(dir, TEST_DATE)
+        ERA5.fetch_initial_conditions(
+            TEST_DATE;
+            dir,
+            retrieve_fn = make_fake_retrieve(recorded),
+        )
+        @test length(recorded) == 4
+        @test ERA5.files_complete(dir, TEST_DATE)
+
+        # So is one with no stamp at all, as every cache had before the stamp
+        rm(version_path)
+        @test !ERA5.files_complete(dir, TEST_DATE)
     end
 end
 
@@ -319,9 +351,11 @@ end
             for dim in ("longitude", "latitude", "model_level", "valid_time")
                 @test haskey(ds.dim, dim)
             end
-            for name in ("u", "v", "w", "t", "q", "skt", "sp", "surface_geopotential")
+            for name in ("u", "v", "t", "q", "skt", "sp", "surface_geopotential")
                 @test haskey(ds, name)
             end
+            # The vertical velocity is not requested, so it is not in the file
+            @test !haskey(ds, "w")
             @test size(Array(ds["t"])) == (NLON, NLAT, NLEVELS, 1)
             @test all(Array(ds["surface_geopotential"]) .== 100.0f0)
             # The levels keep the order CDS delivers, 1 at the top
@@ -347,7 +381,8 @@ end
             @test haskey(ds, "ISTL1")
         end
 
-        # Land: sorted latitude, zeros over ocean, sorted negative z
+        # Land: sorted latitude, sorted negative z, zero_fill over the
+        # fixture's masked points
         NCDatasets.NCDataset(joinpath(dir, ERA5.land_filename(TEST_DATE))) do ds
             @test issorted(Array(ds["lat"]))
             z = Array(ds["z"])
@@ -356,7 +391,8 @@ end
             swvl = Array(ds["swvl"])
             stl = Array(ds["stl"])
             @test size(swvl) == (NLON, NLAT, 4)
-            # Ocean points are exactly 0
+            # This fixture masks the soil fields over ocean, unlike ERA5
+            # single levels, so zero_fill leaves exactly 0 there
             @test all(swvl[4:end, :, :] .== 0)
             @test all(stl[4:end, :, :] .== 0)
             # Layer 1 is the last z index after the reversal
@@ -433,6 +469,7 @@ end
             TEST_DATE;
             dir,
             retrieve_fn = throwing_retrieve,
+            attempts = 1,
         )
         @test !ERA5.files_complete(dir, TEST_DATE)
         for name in ERA5.output_filenames(TEST_DATE)

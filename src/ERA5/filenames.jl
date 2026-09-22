@@ -31,6 +31,15 @@ albedo_filename(date) = "albedo_processed_$(datetimestamp(date)).nc"
 lock_filename(date) = "era5_ic_$(datetimestamp(date)).lock"
 
 """
+The name of the file recording which request built the cached files for `date`.
+"""
+version_filename(date) = "era5_request_version_$(datetimestamp(date)).txt"
+
+# Bump when the requested variables change, so a shared cache stops serving
+# files built from the previous request.
+const REQUEST_VERSION = 1
+
+"""
 The seconds after which a lock left by a killed process counts as abandoned.
 """
 const LOCK_STALE_AGE = 600.0

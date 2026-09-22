@@ -9,16 +9,33 @@ cache_dir() = IC.cache_dir("era5")
 """
     files_complete(dir, date)
 
-Whether the cache at `dir` holds all the output files for `date`. Files only
-move into the cache after validation, so their presence means the set is
-complete.
+Whether the cache at `dir` holds all the output files for `date`, built by the
+current request. Files only move into the cache after validation, so their
+presence means the set is complete.
+
+A cache written before `REQUEST_VERSION` was last bumped counts as
+incomplete, so adding a variable does not leave shared caches serving files
+that lack it.
 """
 function files_complete(dir, date)
-    return all(name -> isfile(joinpath(dir, name)), output_filenames(date))
+    all(name -> isfile(joinpath(dir, name)), output_filenames(date)) || return false
+    return cached_request_version(dir, date) == REQUEST_VERSION
+end
+
+"""
+    cached_request_version(dir, date)
+
+The request version the cached files for `date` were built by, or `nothing`
+when the cache predates the stamp or has none.
+"""
+function cached_request_version(dir, date)
+    path = joinpath(dir, version_filename(date))
+    isfile(path) || return nothing
+    return tryparse(Int, strip(read(path, String)))
 end
 
 function remove_cached_files(dir, date)
-    for name in output_filenames(date)
+    for name in [output_filenames(date); version_filename(date)]
         path = joinpath(dir, name)
         isfile(path) && rm(path)
     end
@@ -43,6 +60,8 @@ does not have them.
   - `retrieve_fn`: the retrieval function, `CDSAPI.retrieve` by default. Tests
     replace it with a fake.
   - `wait`: the seconds between CDS job status checks.
+  - `attempts`: how many times to try each transfer. CDS drops a large
+    transfer part way through often enough that one attempt is not enough.
 
 The download goes to a temporary directory inside `dir`, and the files only
 move into place after validation. An interrupted fetch leaves no partial
@@ -59,6 +78,7 @@ function fetch_initial_conditions(
     force = false,
     retrieve_fn = CDSAPI.retrieve,
     wait = 30.0,
+    attempts = DOWNLOAD_ATTEMPTS,
 )
     date = Dates.DateTime(start_date)
     date == Dates.floor(date, Dates.Hour) || error(
@@ -75,7 +95,7 @@ function fetch_initial_conditions(
     # file while alive, and a lock left by a killed process goes stale after
     # `LOCK_STALE_AGE` seconds.
     Pidfile.mkpidlock(joinpath(dir, lock_filename(date)); stale_age = LOCK_STALE_AGE) do
-        download_and_cache(date, dir; force, retrieve_fn, wait)
+        download_and_cache(date, dir; force, retrieve_fn, wait, attempts)
     end
     return dir
 end
@@ -124,7 +144,14 @@ end
 Download, process, validate, and move the files for `date` into the cache at
 `dir`. Call this only while holding the per-date lock.
 """
-function download_and_cache(date, dir; force, retrieve_fn, wait)
+function download_and_cache(
+    date,
+    dir;
+    force,
+    retrieve_fn,
+    wait,
+    attempts = DOWNLOAD_ATTEMPTS,
+)
     force && remove_cached_files(dir, date)
     if files_complete(dir, date)
         @info "Using cached ERA5 initial conditions" dir date
@@ -134,7 +161,7 @@ function download_and_cache(date, dir; force, retrieve_fn, wait)
     retrieve_fn === CDSAPI.retrieve && assert_credentials()
     cleanup_tmpdirs(dir, date)
     mktempdir(dir; prefix = tmpdir_prefix(date)) do tmpdir
-        files = download_source_files(date, tmpdir; retrieve_fn, wait)
+        files = download_source_files(date, tmpdir; retrieve_fn, wait, attempts)
         @info "Preprocessing ERA5 initial conditions" date
         build_raw(files.model, files.surface, joinpath(tmpdir, raw_filename(date)))
         process_sst(files.surface, joinpath(tmpdir, sst_filename(date)); date)
@@ -146,6 +173,8 @@ function download_and_cache(date, dir; force, retrieve_fn, wait)
         for name in output_filenames(date)
             mv(joinpath(tmpdir, name), joinpath(dir, name); force = true)
         end
+        # Last, so an interrupted move leaves the cache looking incomplete
+        write(joinpath(dir, version_filename(date)), string(REQUEST_VERSION))
     end
     @info "ERA5 initial conditions ready" dir date
     return nothing

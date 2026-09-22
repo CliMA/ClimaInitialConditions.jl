@@ -19,11 +19,17 @@ elseif !ERA5.credentials_available()
         "The ERA5 network tests need CDS credentials in ~/.cdsapirc or in CDSAPI_URL and CDSAPI_KEY",
     )
 else
-    DATE = Dates.DateTime(2023, 6, 1)
+    DATE = Dates.DateTime(get(ENV, "IC_TEST_DATE", "2010-01-01"))
+
+    # A fresh cache root per run, so the download is always exercised and a
+    # cache left by an earlier build is never reused
+    CACHE_ROOT = mktempdir(; cleanup = true)
 
     @testset "ERA5 CDS download end to end" begin
-        mktempdir() do dir
-            fetched_dir = ERA5.fetch_initial_conditions(DATE; dir, wait = 30.0)
+        withenv("INITIAL_CONDITIONS_CACHE_DIR" => CACHE_ROOT) do
+            dir = ERA5.cache_dir()
+            fetched_dir =
+                ERA5.fetch_initial_conditions(DATE; dir, wait = 30.0, force = true)
             @test fetched_dir == dir
             @test ERA5.files_complete(dir, DATE)
             ERA5.validate_dir(dir, DATE)
@@ -39,7 +45,7 @@ else
                 for dim in ("longitude", "latitude", "model_level", "valid_time")
                     @test haskey(ds.dim, dim)
                 end
-                for name in ("u", "v", "w", "t", "q", "skt", "sp", "surface_geopotential")
+                for name in ("u", "v", "t", "q", "skt", "sp", "surface_geopotential")
                     @test haskey(ds, name)
                 end
                 # MARS can answer `1/to/137` with level 1 alone, and only a
@@ -60,21 +66,22 @@ else
             NCDatasets.NCDataset(joinpath(dir, ERA5.land_filename(DATE))) do ds
                 @test issorted(Array(ds["lat"]))
                 @test issorted(Array(ds["z"]))
-                # Ocean points are 0, which is how the ClimaLand reader masks
-                @test minimum(Array(ds["stl"])) == 0
+                # ERA5 single levels define the soil fields over ocean too, so
+                # every point is a real temperature rather than a masked 0
+                @test minimum(Array(ds["stl"])) > 100
+                @test maximum(Array(ds["stl"])) < 400
             end
         end
     end
 
     @testset "default cache directory is used when dir is not given" begin
-        mktempdir() do cache_dir
-            withenv("INITIAL_CONDITIONS_CACHE_DIR" => cache_dir) do
-                @test ERA5.cache_dir() == cache_dir
-                dir = ERA5.fetch_initial_conditions(DATE)
-                @test dir == cache_dir
-                @test ERA5.files_complete(dir, DATE)
-                ERA5.validate_dir(dir, DATE)
-            end
+        withenv("INITIAL_CONDITIONS_CACHE_DIR" => CACHE_ROOT) do
+            # Filled by the testset above, so this is a hit rather than a
+            # second download of the same date
+            dir = ERA5.fetch_initial_conditions(DATE)
+            @test dir == ERA5.cache_dir()
+            @test ERA5.files_complete(dir, DATE)
+            ERA5.validate_dir(dir, DATE)
         end
     end
 end

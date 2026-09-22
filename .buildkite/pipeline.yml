@@ -1,0 +1,42 @@
+agents:
+  queue: central
+  slurm_mem: 16G
+  modules: climacommon/2026_02_18
+
+env:
+  JULIA_DEPOT_PATH: "${BUILDKITE_BUILD_PATH}/${BUILDKITE_PIPELINE_SLUG}/depot/default"
+  SLURM_KILL_BAD_EXIT: 1
+  # Used by the comparison step. The download test writes to a throwaway root
+  # so that it always exercises the download.
+  INITIAL_CONDITIONS_CACHE_DIR: "${BUILDKITE_BUILD_PATH}/${BUILDKITE_PIPELINE_SLUG}/era5_cache"
+  IC_TEST_DATE: "2010-01-01"
+
+steps:
+  - label: "init :computer:"
+    key: "init_cpu_env"
+    command:
+      - echo "--- Instantiate project"
+      - "julia --project=. -e 'using Pkg; Pkg.instantiate(; verbose = true)'"
+      - "julia --project=. -e 'using Pkg; Pkg.precompile()'"
+      - "julia --project=. -e 'using Pkg; Pkg.status()'"
+    agents:
+      slurm_cpus_per_task: 8
+
+  - wait
+
+  # The CDS download is the part GitHub Actions cannot cover: it needs
+  # credentials and can queue for hours.
+  - label: "ERA5 download end to end"
+    key: "network_tests"
+    env:
+      ERA5_NETWORK_TESTS: "true"
+    command:
+      - "julia --color=yes --project=. test/network_tests.jl"
+
+  # Regression guard: the files this package writes must keep matching the
+  # artifact that WeatherQuest produced, apart from documented differences.
+  - label: "Compare against wxquest_initial_conditions"
+    key: "artifact_comparison"
+    depends_on: "network_tests"
+    command:
+      - "julia --color=yes --project=. test/artifact_comparison.jl"
