@@ -278,6 +278,37 @@ end
     end
 end
 
+@testset "a cache from an older request is refetched" begin
+    mktempdir() do dir
+        recorded = []
+        ERA5.fetch_initial_conditions(
+            TEST_DATE;
+            dir,
+            retrieve_fn = make_fake_retrieve(recorded),
+        )
+        @test length(recorded) == 2
+        @test ERA5.files_complete(dir, TEST_DATE)
+
+        version_path = joinpath(dir, ERA5.version_filename(TEST_DATE))
+        @test parse(Int, strip(read(version_path, String))) == ERA5.REQUEST_VERSION
+
+        # A cache built by an older request is incomplete, so it downloads again
+        write(version_path, string(ERA5.REQUEST_VERSION - 1))
+        @test !ERA5.files_complete(dir, TEST_DATE)
+        ERA5.fetch_initial_conditions(
+            TEST_DATE;
+            dir,
+            retrieve_fn = make_fake_retrieve(recorded),
+        )
+        @test length(recorded) == 4
+        @test ERA5.files_complete(dir, TEST_DATE)
+
+        # So is one with no stamp at all, as every cache had before the stamp
+        rm(version_path)
+        @test !ERA5.files_complete(dir, TEST_DATE)
+    end
+end
+
 @testset "end-to-end fetch with fake retrieval" begin
     mktempdir() do dir
         recorded = []

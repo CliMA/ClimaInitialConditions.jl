@@ -175,7 +175,10 @@ differences below are deliberate:
     pressure that the single-level request already supplies as
     `surface_geopotential` and `sp`, which is what `to_z_levels_3d_model`
     reads, so the second request is dropped. Neither `crwc` nor `cswc` is
-    requested, matching `MODEL_LEVEL_PARAM_IDS_FULL`.
+    requested. The requested set matches the one behind the
+    `wxquest_initial_conditions` artifact rather than WeatherQuest's current
+    `MODEL_LEVEL_PARAM_IDS_FULL`, which also lists `75`, `76`, and `135`. The
+    ClimaAtmos reader treats all three as optional, so they can be added later.
 
   - Vertical velocity, MARS parameter `135`, is not requested, so `w` is not in
     the raw file and the atmosphere starts from `w = 0`. ERA5 archives it as

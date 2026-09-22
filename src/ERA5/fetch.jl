@@ -9,16 +9,33 @@ cache_dir() = IC.cache_dir("era5")
 """
     files_complete(dir, date)
 
-Whether the cache at `dir` holds all the output files for `date`. Files only
-move into the cache after validation, so their presence means the set is
-complete.
+Whether the cache at `dir` holds all the output files for `date`, built by the
+current request. Files only move into the cache after validation, so their
+presence means the set is complete.
+
+A cache written before [`REQUEST_VERSION`](@ref) was last bumped counts as
+incomplete, so adding a variable does not leave shared caches serving files
+that lack it.
 """
 function files_complete(dir, date)
-    return all(name -> isfile(joinpath(dir, name)), output_filenames(date))
+    all(name -> isfile(joinpath(dir, name)), output_filenames(date)) || return false
+    return cached_request_version(dir, date) == REQUEST_VERSION
+end
+
+"""
+    cached_request_version(dir, date)
+
+The request version the cached files for `date` were built by, or `nothing`
+when the cache predates the stamp or has none.
+"""
+function cached_request_version(dir, date)
+    path = joinpath(dir, version_filename(date))
+    isfile(path) || return nothing
+    return tryparse(Int, strip(read(path, String)))
 end
 
 function remove_cached_files(dir, date)
-    for name in output_filenames(date)
+    for name in [output_filenames(date); version_filename(date)]
         path = joinpath(dir, name)
         isfile(path) && rm(path)
     end
@@ -156,6 +173,8 @@ function download_and_cache(
         for name in output_filenames(date)
             mv(joinpath(tmpdir, name), joinpath(dir, name); force = true)
         end
+        # Last, so an interrupted move leaves the cache looking incomplete
+        write(joinpath(dir, version_filename(date)), string(REQUEST_VERSION))
     end
     @info "ERA5 initial conditions ready" dir date
     return nothing
