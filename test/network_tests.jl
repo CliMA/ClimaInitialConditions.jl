@@ -7,8 +7,8 @@
 import Test: @test, @testset
 import Dates
 import NCDatasets
-import InitialConditions as IC
-import InitialConditions.ERA5
+import ClimaInitialConditions as IC
+import ClimaInitialConditions.ERA5
 
 run_network_tests = get(ENV, "ERA5_NETWORK_TESTS", "false") == "true"
 
@@ -26,7 +26,7 @@ else
     CACHE_ROOT = mktempdir(; cleanup = true)
 
     @testset "ERA5 CDS download end to end" begin
-        withenv("INITIAL_CONDITIONS_CACHE_DIR" => CACHE_ROOT) do
+        withenv("CLIMA_INITIAL_CONDITIONS_CACHE_DIR" => CACHE_ROOT) do
             dir = ERA5.cache_dir()
             fetched_dir =
                 ERA5.fetch_initial_conditions(DATE; dir, wait = 30.0, force = true)
@@ -75,7 +75,7 @@ else
     end
 
     @testset "default cache directory is used when dir is not given" begin
-        withenv("INITIAL_CONDITIONS_CACHE_DIR" => CACHE_ROOT) do
+        withenv("CLIMA_INITIAL_CONDITIONS_CACHE_DIR" => CACHE_ROOT) do
             # Filled by the testset above, so this is a hit rather than a
             # second download of the same date
             dir = ERA5.fetch_initial_conditions(DATE)

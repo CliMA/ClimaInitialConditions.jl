@@ -1,5 +1,5 @@
 """
-    InitialConditions.ERA5
+    ClimaInitialConditions.ERA5
 
 Initial conditions from ERA5 reanalysis, downloaded from the Copernicus
 Climate Data Store (CDS).
@@ -25,8 +25,8 @@ import Dates
 import FileWatching.Pidfile
 import NCDatasets
 
-import ..InitialConditions as IC
-using ..InitialConditions:
+import ..ClimaInitialConditions as IC
+using ..ClimaInitialConditions:
     COMPRESSION,
     EXPVER_DIM_NAMES,
     check_no_nan,

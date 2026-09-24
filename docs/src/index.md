@@ -1,4 +1,4 @@
-# InitialConditions.jl
+# ClimaInitialConditions.jl
 
 Downloads, processes, and caches the initial conditions that CliMA simulations
 start from. Each data source is a submodule. Today there is one:
@@ -17,7 +17,7 @@ One call does everything and returns the directory holding the six output files
 for that date:
 
 ```julia
-import InitialConditions.ERA5
+import ClimaInitialConditions.ERA5
 import Dates
 
 date = Dates.DateTime(2010, 1, 1)
@@ -99,13 +99,13 @@ download.
 
 The files go to a per-package
 [Scratch.jl](https://github.com/JuliaPackaging/Scratch.jl) directory and stay
-there across runs. Set the `INITIAL_CONDITIONS_CACHE_DIR` environment variable to use a
+there across runs. Set the `CLIMA_INITIAL_CONDITIONS_CACHE_DIR` environment variable to use a
 different directory, such as a shared cache on a cluster.
 
 The download goes to a temporary directory, and the files only move into the
 cache after validation. An interrupted run leaves no partial cache. To delete
 and download a date again, pass `force = true` to
-[`fetch_initial_conditions`](@ref InitialConditions.ERA5.fetch_initial_conditions).
+[`fetch_initial_conditions`](@ref ClimaInitialConditions.ERA5.fetch_initial_conditions).
 
 A per-date lock file serializes concurrent fetches. When several simulations
 share a cache directory and need the same date, one downloads and the others
@@ -157,7 +157,7 @@ asserts a `pressure_level` dimension, so WeatherQuest has to run in between.
     than the rest of the processing here, so it is left for a follow-up.
 
 MARS can answer a `1/to/137` request with level 1 alone.
-[`validate_dir`](@ref InitialConditions.ERA5.validate_dir) rejects that, because
+[`validate_dir`](@ref ClimaInitialConditions.ERA5.validate_dir) rejects that, because
 the truncated file is otherwise plausible and would initialize the whole column
 from a single level near the model top.
 
@@ -237,10 +237,10 @@ changes its dimension names or its level order.
 ### Fetching
 
 ```@docs
-InitialConditions.ERA5.fetch_initial_conditions
-InitialConditions.ERA5.cache_dir
-InitialConditions.ERA5.credentials_available
-InitialConditions.ERA5.files_complete
+ClimaInitialConditions.ERA5.fetch_initial_conditions
+ClimaInitialConditions.ERA5.cache_dir
+ClimaInitialConditions.ERA5.credentials_available
+ClimaInitialConditions.ERA5.files_complete
 ```
 
 ### Processing
@@ -265,23 +265,23 @@ Float32. Both could become keywords later without a breaking release.
 model-level and single-level downloads, into the atmosphere state file.
 
 ```@docs
-InitialConditions.ERA5.build_raw
-InitialConditions.ERA5.process_sst
-InitialConditions.ERA5.process_sic
-InitialConditions.ERA5.process_land
-InitialConditions.ERA5.process_bucket
-InitialConditions.ERA5.process_albedo
+ClimaInitialConditions.ERA5.build_raw
+ClimaInitialConditions.ERA5.process_sst
+ClimaInitialConditions.ERA5.process_sic
+ClimaInitialConditions.ERA5.process_land
+ClimaInitialConditions.ERA5.process_bucket
+ClimaInitialConditions.ERA5.process_albedo
 ```
 
 ### Validation and file names
 
 ```@docs
-InitialConditions.ERA5.validate_dir
-InitialConditions.ERA5.output_filenames
-InitialConditions.ERA5.raw_filename
-InitialConditions.ERA5.sst_filename
-InitialConditions.ERA5.sic_filename
-InitialConditions.ERA5.land_filename
-InitialConditions.ERA5.bucket_filename
-InitialConditions.ERA5.albedo_filename
+ClimaInitialConditions.ERA5.validate_dir
+ClimaInitialConditions.ERA5.output_filenames
+ClimaInitialConditions.ERA5.raw_filename
+ClimaInitialConditions.ERA5.sst_filename
+ClimaInitialConditions.ERA5.sic_filename
+ClimaInitialConditions.ERA5.land_filename
+ClimaInitialConditions.ERA5.bucket_filename
+ClimaInitialConditions.ERA5.albedo_filename
 ```

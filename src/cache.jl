@@ -2,12 +2,12 @@
     cache_root()
 
 The directory that holds every cached initial condition, one subdirectory per
-data source. This is a Scratch.jl directory, or `INITIAL_CONDITIONS_CACHE_DIR`
+data source. This is a Scratch.jl directory, or `CLIMA_INITIAL_CONDITIONS_CACHE_DIR`
 if you set it. Reads the environment on each call, so setting the variable
 after loading the package still works.
 """
 function cache_root()
-    return get(ENV, "INITIAL_CONDITIONS_CACHE_DIR") do
+    return get(ENV, "CLIMA_INITIAL_CONDITIONS_CACHE_DIR") do
         Scratch.@get_scratch!("initial_conditions")
     end
 end

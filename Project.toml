@@ -1,4 +1,4 @@
-name = "InitialConditions"
+name = "ClimaInitialConditions"
 uuid = "a7be033f-8c2c-4c2d-9045-a1e5e881f8d2"
 authors = ["CliMA Contributors <clima-software@caltech.edu>"]
 version = "0.1.0"

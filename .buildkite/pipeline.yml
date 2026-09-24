@@ -8,7 +8,7 @@ env:
   SLURM_KILL_BAD_EXIT: 1
   # Used by the comparison step. The download test writes to a throwaway root
   # so that it always exercises the download.
-  INITIAL_CONDITIONS_CACHE_DIR: "${BUILDKITE_BUILD_PATH}/${BUILDKITE_PIPELINE_SLUG}/era5_cache"
+  CLIMA_INITIAL_CONDITIONS_CACHE_DIR: "${BUILDKITE_BUILD_PATH}/${BUILDKITE_PIPELINE_SLUG}/era5_cache"
   IC_TEST_DATE: "2010-01-01"
 
 steps:

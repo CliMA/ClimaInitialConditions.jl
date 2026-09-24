@@ -11,7 +11,7 @@
 import Test: @test, @testset
 import Dates
 import NCDatasets
-import InitialConditions.ERA5
+import ClimaInitialConditions.ERA5
 
 const ARTIFACT_DIR = get(
     ENV,
@@ -67,7 +67,7 @@ function ocean_mask()
     end
 end
 
-@testset "InitialConditions.ERA5 against wxquest_initial_conditions" begin
+@testset "ClimaInitialConditions.ERA5 against wxquest_initial_conditions" begin
     for (name, expected_missing) in EXPECTED_MISSING
         mine = joinpath(dir, "$(name)_$(STAMP).nc")
         theirs = joinpath(ARTIFACT_DIR, "$(name)_$(STAMP).nc")

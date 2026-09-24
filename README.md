@@ -1,7 +1,7 @@
-# InitialConditions.jl
+# ClimaInitialConditions.jl
 
-[![CI](https://github.com/CliMA/InitialConditions.jl/actions/workflows/ci.yml/badge.svg)](https://github.com/CliMA/InitialConditions.jl/actions/workflows/ci.yml)
-[![Docs](https://img.shields.io/badge/docs_are_here-click_me%21-blue.svg)](https://clima.github.io/InitialConditions.jl/dev/)
+[![CI](https://github.com/CliMA/ClimaInitialConditions.jl/actions/workflows/ci.yml/badge.svg)](https://github.com/CliMA/ClimaInitialConditions.jl/actions/workflows/ci.yml)
+[![Docs](https://img.shields.io/badge/docs_are_here-click_me%21-blue.svg)](https://clima.github.io/ClimaInitialConditions.jl/dev/)
 
 Downloads, processes, and caches the initial conditions that CliMA simulations
 start from. Each data source is a submodule. Today there is one, `ERA5`, which
@@ -23,14 +23,14 @@ writes the NetCDF files that ClimaCoupler, ClimaAtmos, and ClimaLand read:
 ## Usage
 
 ```julia
-import InitialConditions.ERA5
+import ClimaInitialConditions.ERA5
 import Dates
 
 dir = ERA5.fetch_initial_conditions(Dates.DateTime(2010, 1, 1))
 ```
 
 The files are cached, so later calls for the same date make no network
-requests. Set `INITIAL_CONDITIONS_CACHE_DIR` to cache somewhere other than the default
+requests. Set `CLIMA_INITIAL_CONDITIONS_CACHE_DIR` to cache somewhere other than the default
 Scratch.jl directory, for example a shared directory on a cluster. A per-date
 lock file lets several processes share one cache safely.
 
@@ -55,7 +55,7 @@ WeatherQuest source in their docstring, and WeatherQuest
 than its own copies. The differences that remain are deliberate: the
 model-level state takes one MARS request rather than two, and the files hold
 only the variables that a consumer reads. The
-[documentation](https://clima.github.io/InitialConditions.jl/dev/) lists them.
+[documentation](https://clima.github.io/ClimaInitialConditions.jl/dev/) lists them.
 
 The atmosphere state is on the 137 native model levels, from the
 `reanalysis-era5-complete` MARS archive, which has a licence of its own to
