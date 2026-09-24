@@ -1,15 +1,15 @@
 """
-    InitialConditions
+    ClimaInitialConditions
 
 Download, process, and cache initial conditions for CliMA simulations.
 
 Each data source is a submodule. Today there is one:
 
-  - `InitialConditions.ERA5`: ERA5 reanalysis from the Copernicus Climate Data
+  - `ClimaInitialConditions.ERA5`: ERA5 reanalysis from the Copernicus Climate Data
     Store, for weather and subseasonal runs.
 
 ```julia
-import InitialConditions.ERA5
+import ClimaInitialConditions.ERA5
 import Dates
 
 dir = ERA5.fetch_initial_conditions(Dates.DateTime(2010, 1, 1))
@@ -17,7 +17,7 @@ dir = ERA5.fetch_initial_conditions(Dates.DateTime(2010, 1, 1))
 
 Files are cached in a Scratch.jl directory, one subdirectory per source, so
 later runs for the same date do not use the network. Set
-`INITIAL_CONDITIONS_CACHE_DIR` to cache somewhere else, for example a shared
+`CLIMA_INITIAL_CONDITIONS_CACHE_DIR` to cache somewhere else, for example a shared
 directory on a cluster.
 
 The top level holds what a source needs but does not own: the cache layout,
@@ -25,7 +25,7 @@ NetCDF reading and writing helpers, gap filling, and validation helpers. These
 are internal for now. A second source will show which of them belong in a
 public shared API.
 """
-module InitialConditions
+module ClimaInitialConditions
 
 import Dates
 import FileWatching.Pidfile
@@ -43,4 +43,4 @@ include("checks.jl")
 # Data sources
 include("ERA5/ERA5.jl")
 
-end # module InitialConditions
+end # module ClimaInitialConditions

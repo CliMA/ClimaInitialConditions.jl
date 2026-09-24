@@ -2,8 +2,8 @@ import Test: @test, @testset, @test_throws
 import Dates
 import FileWatching.Pidfile
 import NCDatasets
-import InitialConditions as IC
-import InitialConditions.ERA5
+import ClimaInitialConditions as IC
+import ClimaInitialConditions.ERA5
 
 const TEST_DATE = Dates.DateTime(2024, 3, 15)
 const NLON = 8

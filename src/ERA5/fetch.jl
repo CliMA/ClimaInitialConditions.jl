@@ -2,7 +2,7 @@
     cache_dir()
 
 The directory that holds the cached ERA5 initial conditions, an `era5`
-subdirectory of the `InitialConditions` cache root.
+subdirectory of the `ClimaInitialConditions` cache root.
 """
 cache_dir() = IC.cache_dir("era5")
 
